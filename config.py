@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 
 
@@ -5,13 +6,17 @@ class Config:
     """
     Конфигурация проекта.
 
-    Поддерживает два режима:
-        kaggle — пути /kaggle/input/...
-        local  — пути data/ относительно корня проекта.
+    Режим определяется автоматически:
+        kaggle — если существует /kaggle/input;
+        local  — иначе (пути data/ и results/ относительно корня проекта).
+
+    Можно форсировать режим: Config(mode="local") или Config(mode="kaggle").
     """
 
-    MODE = "local"
     RANDOM_STATE = 42
+
+    KAGGLE_INPUT = Path("/kaggle/input")
+    KAGGLE_WORKING = Path("/kaggle/working")
 
     KAGGLE_PATHS = {
         "credit": "/kaggle/input/datasets/laotse/credit-risk-dataset/credit_risk_dataset.csv",
@@ -19,26 +24,40 @@ class Config:
         "demand": "/kaggle/input/datasets/akshaymairal/store-item-demand-forecasting-challenge/train.csv",
     }
 
-    PROJECT_ROOT = Path(__file__).resolve().parent
-    DATA_DIR = PROJECT_ROOT / "data"
-    RESULTS_DIR = PROJECT_ROOT / "results"
-
-    LOCAL_PATHS = {
-        "credit": str(DATA_DIR / "credit_risk_dataset.csv"),
-        "churn":  str(DATA_DIR / "WA_Fn-UseC_-Telco-Customer-Churn.csv"),
-        "demand": str(DATA_DIR / "train.csv"),
-    }
-
     def __init__(self, mode: str | None = None):
         """
         Инициализация конфигурации.
 
         Args:
-            mode: "kaggle" или "local". Если None — Config.MODE.
+            mode: "kaggle", "local" или None.
+                  Если None — режим определяется автоматически.
         """
-        self.mode = mode or self.MODE
-        self._paths = self.KAGGLE_PATHS if self.mode == "kaggle" else self.LOCAL_PATHS
-        self.RESULTS_DIR.mkdir(exist_ok=True)
+        self.mode = mode or self._detect_mode()
+
+        if self.mode == "kaggle":
+            self.PROJECT_ROOT = self.KAGGLE_WORKING
+            self.RESULTS_DIR = self.KAGGLE_WORKING / "results"
+            self._paths = self.KAGGLE_PATHS
+        else:
+            self.PROJECT_ROOT = Path(__file__).resolve().parent
+            self.DATA_DIR = self.PROJECT_ROOT / "data"
+            self.RESULTS_DIR = self.PROJECT_ROOT / "results"
+            self._paths = {
+                "credit": str(self.DATA_DIR / "credit_risk_dataset.csv"),
+                "churn":  str(self.DATA_DIR / "WA_Fn-UseC_-Telco-Customer-Churn.csv"),
+                "demand": str(self.DATA_DIR / "train.csv"),
+            }
+
+        self.RESULTS_DIR.mkdir(parents=True, exist_ok=True)
+
+    @staticmethod
+    def _detect_mode() -> str:
+        """Определяет режим: kaggle, если есть /kaggle/input, иначе local."""
+        if os.environ.get("KAGGLE_KERNEL_RUN_TYPE"):
+            return "kaggle"
+        if Path("/kaggle/input").exists():
+            return "kaggle"
+        return "local"
 
     @property
     def path_credit(self) -> str:
@@ -74,6 +93,14 @@ class Config:
     def final_table(self) -> Path:
         """Путь к CSV-таблице «метод × датасет × метрика»."""
         return self.RESULTS_DIR / "final_table.csv"
+
+    def cv_folds(self, dataset: str) -> Path:
+        """Путь к CSV с метриками по фолдам CV (например, credit_cv_folds.csv)."""
+        return self.RESULTS_DIR / f"{dataset}_cv_folds.csv"
+
+    def test_results(self, dataset: str) -> Path:
+        """Путь к CSV с метриками на отложенном тесте после подбора гиперпараметров."""
+        return self.RESULTS_DIR / f"{dataset}_test.csv"
 
     def __repr__(self) -> str:
         """Строковое представление конфигурации для отладки."""
