@@ -36,8 +36,9 @@ class Config:
 
         if self.mode == "kaggle":
             self.PROJECT_ROOT = self.KAGGLE_WORKING
+            self.DATA_DIR = self.KAGGLE_WORKING / "data"
             self.RESULTS_DIR = self.KAGGLE_WORKING / "results"
-            self._paths = self.KAGGLE_PATHS
+            self._paths = dict(self.KAGGLE_PATHS)
         else:
             self.PROJECT_ROOT = Path(__file__).resolve().parent
             self.DATA_DIR = self.PROJECT_ROOT / "data"
@@ -47,6 +48,13 @@ class Config:
                 "churn":  str(self.DATA_DIR / "WA_Fn-UseC_-Telco-Customer-Churn.csv"),
                 "demand": str(self.DATA_DIR / "train.csv"),
             }
+
+        # Доп. задания (06, 07): данные готовит scripts/prepare_extra_data.py
+        self._paths.update({
+            "imbalance":   str(self.DATA_DIR / "cs-training.csv"),
+            "claims_freq": str(self.DATA_DIR / "freMTPL2freq.csv"),
+            "claims_sev":  str(self.DATA_DIR / "freMTPL2sev.csv"),
+        })
 
         self.RESULTS_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -73,6 +81,21 @@ class Config:
     def path_demand(self) -> str:
         """Путь к датасету Store Item Demand Forecasting."""
         return self._paths["demand"]
+
+    @property
+    def path_imbalance(self) -> str:
+        """Путь к Give Me Some Credit (доп. задание 1, сильный дисбаланс)."""
+        return self._paths["imbalance"]
+
+    @property
+    def path_claims_freq(self) -> str:
+        """Путь к freMTPL2freq - полисы (доп. задание 2, скошенный таргет)."""
+        return self._paths["claims_freq"]
+
+    @property
+    def path_claims_sev(self) -> str:
+        """Путь к freMTPL2sev - суммы выплат (доп. задание 2)."""
+        return self._paths["claims_sev"]
 
     @property
     def credit_plot(self) -> Path:

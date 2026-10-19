@@ -64,11 +64,25 @@
 Итоговые результаты экспериментов (таблицы, значимость, выводы) -
 в [`REPORT.md`](REPORT.md).
 
+### Дополнительные исследования (по заданию преподавателя)
+
+- **06_imbalance** - сильный дисбаланс классов (Give Me Some Credit, 6.7% дефолтов):
+  ROC-AUC vs PR-AUC / MCC / Balanced Accuracy / F1, бизнес-стоимость ошибок, подбор порога,
+  `class_weight` / `scale_pos_weight` / `sample_weight`, SMOTE / ADASYN / SMOTEENN (только на train),
+  калибровка (Platt, isotonic), двухстадийная модель.
+- **07_skewed_target** - скошенный таргет (freMTPL2, страховые выплаты, 96% нулей):
+  диагностика (skewness, kurtosis, Breusch-Pagan, White, QQ-plot, Cook's distance), log1p / Yeo-Johnson /
+  винзоризация / smearing-поправка, Huber / Quantile / Poisson / Tweedie / асимметричная потеря, веса,
+  двухстадийная модель, сегментный анализ ошибки (нули / bulk / tail), применимость Croston / SBA / TSB.
+
 ### Структура
 
 ```
 config.py              пути к данным/результатам, RANDOM_STATE
+scripts/prepare_extra_data.py  загрузка данных для 06 и 07
 REPORT.md              итоговый отчёт по результатам прогона
+docs/Курсовая_работа.docx  текст курсовой работы (оформление по образцу кафедры)
+CHAT_BACKUP.md         бэкап переписки с ассистентом: что проверено и исправлено
 requirements.txt       зафиксированные версии (экспорт из uv.lock)
 notebooks/             01_eda ... 05_statistics
 results/               графики и CSV, которые создают ноутбуки
@@ -113,7 +127,19 @@ pip install -r requirements.txt
 | 2 | Telco Customer Churn | Классификация | https://www.kaggle.com/datasets/blastchar/telco-customer-churn |
 | 3 | Store Item Demand Forecasting | Регрессия | https://www.kaggle.com/datasets/akshaymairal/store-item-demand-forecasting-challenge |
 
-Положить CSV в `data/`:
+Для дополнительных ноутбуков 06 и 07 данные скачиваются и конвертируются скриптом
+(Give Me Some Credit с зеркала на GitHub, freMTPL2 из R-пакета CASdatasets):
+
+```bash
+uv run python scripts/prepare_extra_data.py
+```
+
+| № | Название | Задача | Источник |
+|---|---|---|---|
+| 4 | Give Me Some Credit | Классификация, сильный дисбаланс | https://www.kaggle.com/c/GiveMeSomeCredit |
+| 5 | freMTPL2freq / freMTPL2sev | Регрессия, скошенный таргет | https://github.com/dutangc/CASdatasets |
+
+Положить CSV основных датасетов в `data/`:
 
 ```
 data/
@@ -144,6 +170,8 @@ uv run jupyter lab
 3. `03_churn.ipynb` — классификация churn
 4. `04_demand.ipynb` — регрессия demand
 5. `05_statistics.ipynb` — Friedman + Nemenyi
+6. `06_imbalance.ipynb` — доп. задание 1, сильный дисбаланс (независим от 01–05)
+7. `07_skewed_target.ipynb` — доп. задание 2, скошенный таргет (независим от 01–05)
 
 ### Kaggle
 
